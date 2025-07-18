@@ -19,15 +19,18 @@ echo 'Do stuff!';
 git branch -D gh-pages
 git checkout -b gh-pages
 
-
 quarto render
-mv ./_site/scripts docs
-rm -rf ./_site
-rm -rf ./data
-rm -rf ./scripts
+
+mkdir docs
+mv _site/scripts/* docs
+rm -rf _site
+rm -rf data
+rm -rf scripts
 rm gardens.Rproj
 rm renv.lock
 rm _quarto.yml
+rm .Rprofile
+
 git add .
 git commit -m 'update site'
 git push origin gh-pages -f
