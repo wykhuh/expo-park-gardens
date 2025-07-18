@@ -19,31 +19,17 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(sf)
-library(tmap)
 library(basemaps)
-
 ```
 
 ```{r}
 nhm_color <- '#cc0000'
 rose_color <- '#3333cc'
-
-create_year_chart <- function(df) {
-  ggplot(data=df, mapping=aes(x=year, y=n, color=place)) + 
-  scale_color_manual(values=c(nhm_color, rose_color))+
-  geom_line() +
-  geom_point()+
-  scale_x_continuous(n.breaks=10) +
-  theme_bw() +
-  theme( panel.grid.minor.x = element_blank()) +
-  labs(x = "Year",
-       y = "Observations")
-}
 ```
 
 ## GBIF data
 
-I downloaded iNaturalist and eBird (Cornell Lab of Ornithology) data from 2014 to 2023 at Natural History Museum of Los Angeles County and Rose Garden using GBIF.org. GBIF only includes research grade iNaturalist observations. I chose the end of 2023 as the cutoff date because GBIF does not currently have eBird records after December 2023. I also filtered the iNaturalist observations to have coordinate uncertainty of 100 meters or less. eBird observations do not provide coordinate uncertainty data. I filtered the iNaturalist observations where taxon rank is 'FORM', 'SPECIES', 'SUBSPECIES' or 'VARIETY'. eBird only has 'SPECIES'. Here's the code to [clean the data](clean_gbif.qmd)
+I'm using iNaturalist and eBird (Cornell Lab of Ornithology) data from 2014 to 2023 at Natural History Museum of Los Angeles County and Rose Garden that I downloaed from GBIF.org. I did some basic [cleaning of the GBIF data](clean-gbif).
 
 ```{r}
 #| message: false
@@ -64,7 +50,7 @@ There are 14,735 iNaturalist and eBird observations for the NHM and the Rose Gar
 dim(gbif_df)
 ```
 
-Despite the Rose Garden being a much bigger garden, NHM has 14,397 observations, while the Rose Garden has 338. NHM has 42 times more observations than the Rose Garden.
+Despite the Rose Garden being a much bigger garden, NHM has 14,397 observations, while the Rose Garden has 338. NHM has 42 times more observations than the Rose Garden!
 
 ```{r}
 table(gbif_df$place)
@@ -73,13 +59,21 @@ table(gbif_df$place)
 ## Map of observations
 
 ```{r}
-#| message: false
+#| include: false
+#| hack: include hides st_read message, but code block is not rendered
 rose_sf <- sf::st_read('../data/raw/rose_garden.geojson')
 nhm_sf <- sf::st_read('../data/raw/nhm.geojson')
 ```
 
 ```{r}
-gbif_sf <- gbif_df %>% 
+#| eval: false
+#| hack: render the code block, and message is not rendered
+rose_sf <- sf::st_read('../data/raw/rose_garden.geojson')
+nhm_sf <- sf::st_read('../data/raw/nhm.geojson')
+```
+
+```{r}
+gbif_sf <- gbif_df %>%
   st_as_sf(coords = c("decimalLongitude", "decimalLatitude"),   crs = 4326)
 ```
 
@@ -88,7 +82,7 @@ rose_3857_sf <- st_transform(rose_sf,  crs = st_crs(3857))
 nhm_3857_sf <- st_transform(nhm_sf,  crs = st_crs(3857))
 gbif_3857_sf <- st_transform(gbif_sf,  crs = st_crs(3857))
 
-bbox_sf <- rbind(rose_3857_sf, nhm_3857_sf) |> 
+bbox_sf <- rbind(rose_3857_sf, nhm_3857_sf) |>
   st_bbox() |>
   st_as_sfc() |>
   st_buffer(dist=25)
@@ -97,21 +91,20 @@ bbox_sf <- rbind(rose_3857_sf, nhm_3857_sf) |>
 This map shows the observations at NHM and the Rose Garden.
 
 ```{r}
-# carto, voyager
 set_defaults(map_service = "esri", map_type = "world_imagery")
 # set_defaults(map_service = "carto", map_type = "voyager")
 
 ggplot() +
   basemap_gglayer(bbox_sf) +
   geom_sf(data = bbox_sf, fill=alpha('white', .25)) +
-  geom_sf(data = rose_3857_sf, color = rose_color, 
+  geom_sf(data = rose_3857_sf, color = rose_color,
           fill = "transparent", linewidth = .75) +
-  geom_sf(data = nhm_3857_sf, color = nhm_color, 
+  geom_sf(data = nhm_3857_sf, color = nhm_color,
           fill = "transparent", linewidth = .75) +
   geom_sf(data = gbif_3857_sf, mapping=aes(color=place)) +
   scale_fill_identity()  +
   scale_color_manual(values=c(nhm_color, rose_color)) +
-  theme_void() 
+  theme_void()
 
 
 ```
@@ -124,7 +117,15 @@ Comparison of the NHM and Rose Garden observations by year. There was a big dip 
 year_df <- gbif_df |>
   count(place, year)
 
-create_year_chart(year_df)
+ggplot(data=year_df, mapping=aes(x=year, y=n, color=place)) +
+  scale_color_manual(values=c(nhm_color, rose_color))+
+  geom_line() +
+  geom_point()+
+  scale_x_continuous(n.breaks=10) +
+  theme_bw() +
+  theme( panel.grid.minor.x = element_blank()) +
+  labs(x = "Year",
+       y = "Observations")
 ```
 
 Observations at NHM per year.
@@ -146,7 +147,7 @@ gbif_rose_df |>
 Comparison of the number of observations based on taxonomy classes. So. Many. Birds.
 
 ```{r}
-ggplot(data=gbif_df, mapping=aes(y=class, fill=place)) + 
+ggplot(data=gbif_df, mapping=aes(y=class, fill=place)) +
     scale_color_manual(values=c(nhm_color, rose_color),
                        aesthetics = c("colour", "fill"))+
   geom_bar( position = position_dodge(preserve = 'single')) +
@@ -156,7 +157,7 @@ ggplot(data=gbif_df, mapping=aes(y=class, fill=place)) +
 Fourteen taxa classes are observed at NHM. Birds (Aves) are the most observed class by a big margin (11,212 observations). Insects (Insecta) are the second most observed class (2,479 observations).
 
 ```{r}
-ggplot(data=gbif_nhm_df, mapping=aes(y=class)) + 
+ggplot(data=gbif_nhm_df, mapping=aes(y=class)) +
   geom_bar( fill=nhm_color) +
   theme_bw()
 ```
@@ -170,7 +171,7 @@ Nine taxa classes are observed at the Rose Garden. Birds and insects are also th
 
 ```{r}
 
-ggplot(data=gbif_rose_df, mapping=aes(y=class)) + 
+ggplot(data=gbif_rose_df, mapping=aes(y=class)) +
   geom_bar(fill=rose_color) +
   theme_bw()
 ```
@@ -185,14 +186,14 @@ gbif_rose_df |>
 Comparison of the number of species observed. NHM has 441 species while the Rose Garden has 100. NHM has 4 times the number of species as the Rose Garden. Keep in mind NHM has 42 times the number of observations.
 
 ```{r}
-gbif_nhm_df |> 
+gbif_nhm_df |>
   select(verbatimScientificName) |>
   unique() |>
   nrow()
 ```
 
 ```{r}
-gbif_rose_df |> 
+gbif_rose_df |>
   select(verbatimScientificName) |>
   unique() |>
   nrow()
@@ -202,7 +203,7 @@ gbif_rose_df |>
 Number of species by taxa class at NHM. Even though though there far more bird observations than insect observations, there are more insect species than bird species (240 insect species vs 136 bird species).
 
 ```{r}
-gbif_nhm_df |> 
+gbif_nhm_df |>
   select(verbatimScientificName, class) |>
   unique() |>
   count(class)
@@ -211,7 +212,7 @@ gbif_nhm_df |>
 Number of species by taxa class at Rose Garden. Rose garden has 37 bird species and 36 insect species.
 
 ```{r}
-gbif_rose_df |> 
+gbif_rose_df |>
   select(verbatimScientificName, class) |>
   unique() |>
   count(class)
@@ -222,8 +223,8 @@ gbif_rose_df |>
 Comparison of the number of iNaturalist and eBird observations. NHM has more eBird observations than iNaturalist observations. Rose Garden has more iNaturalist observations than eBird observations. It is surprising to see so few eBird observations at the Rose Garden. It is as if birders are purposefully avoiding the Rose Garden.
 
 ```{r}
-ggplot(data=gbif_df, 
-       mapping=aes(x=place, fill=institutionCode)) + 
+ggplot(data=gbif_df,
+       mapping=aes(x=place, fill=institutionCode)) +
   geom_bar( position = position_dodge(preserve = 'single')) +
   theme_bw()
 ```
@@ -233,9 +234,9 @@ eBird and iNaturalist observations at NHM.
 ```{r}
 gbif_nhm_platform_df <- gbif_nhm_df |>
   count(year, institutionCode)
-  
-ggplot(data=gbif_nhm_platform_df, 
-       mapping=aes(x=year, y=n, color=institutionCode)) + 
+
+ggplot(data=gbif_nhm_platform_df,
+       mapping=aes(x=year, y=n, color=institutionCode)) +
   geom_line(  ) +
   theme_bw()
 ```
@@ -245,9 +246,9 @@ eBird and iNaturalist observations at Rose Garden.
 ```{r}
 gbif_rose_platform_df <- gbif_rose_df |>
   count(year, institutionCode)
-  
-ggplot(data=gbif_rose_platform_df, 
-       mapping=aes(x=year, y=n, color=institutionCode)) + 
+
+ggplot(data=gbif_rose_platform_df,
+       mapping=aes(x=year, y=n, color=institutionCode)) +
   geom_line(  ) +
   theme_bw()
 ```
@@ -260,40 +261,41 @@ ggplot(data=gbif_rose_platform_df,
 common_names <- read_csv('../data/processed/ncbi_common_names.csv')
 ```
 
-
-Top ten most observed species at NHM. All birds since eBird has more observations than than iNaturalist at NHM.
+Top ten most observed species at NHM. All top ten species are birds since eBird has more observations than than iNaturalist at NHM.
 
 ```{r}
-gbif_nhm_df |> 
+gbif_nhm_df |>
   count(class, verbatimScientificName) |>
   arrange(desc(n)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```
 
-Top ten most observed species at Rose Garden. Wider variety than NHM since iNaturalist has more observations than eBird.
+Top ten most observed species at Rose Garden. Wider variety of top ten species than NHM since iNaturalist has more observations than eBird.
 
 ```{r}
-gbif_rose_df |> 
+gbif_rose_df |>
   count(class, verbatimScientificName) |>
   arrange(desc(n)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```
-Top ten most observed species at NHM for iNaturalist. 
+
+Top ten most observed species at NHM for iNaturalist.
 
 ```{r}
-gbif_nhm_df |> 
+gbif_nhm_df |>
   filter(institutionCode=='iNaturalist') |>
   count(class, verbatimScientificName) |>
   arrange(desc(n)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```
-Top ten most observed species at Rose Garden for iNaturalist. 
+
+Top ten most observed species at Rose Garden for iNaturalist.
 
 ```{r}
-gbif_rose_df |> 
+gbif_rose_df |>
   filter(institutionCode=='iNaturalist') |>
   count(class, verbatimScientificName) |>
   arrange(desc(n)) |>
@@ -309,4 +311,4 @@ I'm a community scientists who likes to dabble with iNaturalist data. I wonder h
 
 With such a lopsided number of observations, it is hard to determine if the difference in number of taxa found at the two places is due to a difference in the biodiversity or due to the number of people making observations. I think it would be cool if there were iNaturalist and eBird events at same time with equal number of participants at the two locations to get data about the biodiversity of the two gardens.
 
-NHM Nature Garden is a small patch of greenspace in a very urban setting that is full of people on a daily basis. Yet it still has over 14K eBird and iNaturalist observations and 400 observed species. I think it would be cool if other small green spaces owned by local governments would follow this model.  
+NHM Nature Garden is a small patch of greenspace in a very urban setting that is full of people on a daily basis. Yet it still has over 14K eBird and iNaturalist observations and 400 observed species. I think it would be cool if other small green spaces owned by local governments would follow this model of including native plants to promote biodiversity.

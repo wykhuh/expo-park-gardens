@@ -87,6 +87,12 @@ table(rose_raw_df$institutionCode)
 
 ## clean raw GBIF data
 
+Here are the steps to clean the GBIF data.
+
+- Select observations from 2104 to 2023 because GBIF does not currently have eBird records after December 2023. 
+- Select iNaturalist observations that have coordinate uncertainty of 100 meters or less. eBird observations do not provide coordinate uncertainty data. 
+- Select the iNaturalist observations where taxon rank is 'FORM', 'SPECIES', 'SUBSPECIES' or 'VARIETY'. eBird only has 'SPECIES'.
+
 ```{r}
 clean_gbif <- function(df) {
   df |>
