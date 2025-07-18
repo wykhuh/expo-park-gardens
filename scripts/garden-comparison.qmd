@@ -219,7 +219,7 @@ Number of species by taxa class at NHM. Even though though there far more bird o
 gbif_nhm_df |>
   select(verbatimScientificName, class) |>
   unique() |>
-  count(class, name="observations")
+  count(class, name="species")
 ```
 
 Number of species by taxa class at Rose Garden. Rose garden has 37 bird species and 36 insect species.
@@ -228,7 +228,7 @@ Number of species by taxa class at Rose Garden. Rose garden has 37 bird species 
 gbif_rose_df |>
   select(verbatimScientificName, class) |>
   unique() |>
-  count(class, name="observations")
+  count(class, name="species")
 ```
 
 ## iNaturalist vs eBird
