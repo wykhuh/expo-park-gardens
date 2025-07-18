@@ -1,6 +1,9 @@
 ---
 output-file: index
-format: html
+format:
+  html:
+    df-print: kable
+    css: styles.css
 ---
 
 # Biodiversity of the Gardens at Exposition Park - Draft
@@ -104,7 +107,10 @@ ggplot() +
   geom_sf(data = gbif_3857_sf, mapping=aes(color=place)) +
   scale_fill_identity()  +
   scale_color_manual(values=c(nhm_color, rose_color)) +
-  theme_void()
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank()) +
+  ggtitle("eBird and iNaturalists Observations at NHMLAC and Rose Garden")
 
 
 ```
@@ -115,31 +121,31 @@ Comparison of the NHM and Rose Garden observations by year. There was a big dip 
 
 ```{r}
 year_df <- gbif_df |>
-  count(place, year)
+  count(place, year, name="observations")
 
-ggplot(data=year_df, mapping=aes(x=year, y=n, color=place)) +
+ggplot(data=year_df, mapping=aes(x=year, y=observations, color=place)) +
   scale_color_manual(values=c(nhm_color, rose_color))+
   geom_line() +
   geom_point()+
   scale_x_continuous(n.breaks=10) +
   theme_bw() +
-  theme( panel.grid.minor.x = element_blank()) +
-  labs(x = "Year",
-       y = "Observations")
+  theme( panel.grid.minor.x = element_blank(),
+         legend.title = element_blank()) +
+  labs(title="Observations by Year")
 ```
 
 Observations at NHM per year.
 
 ```{r}
 gbif_nhm_df |>
-  count(year)
+  count(year, name="observations")
 ```
 
 Observations at Rose Garden per year. All that green space, but couldn't get over 100 observations per year.
 
 ```{r}
 gbif_rose_df |>
-  count(year)
+  count(year, name="observations")
 ```
 
 ## Compare observations by taxonomy class
@@ -151,7 +157,10 @@ ggplot(data=gbif_df, mapping=aes(y=class, fill=place)) +
     scale_color_manual(values=c(nhm_color, rose_color),
                        aesthetics = c("colour", "fill"))+
   geom_bar( position = position_dodge(preserve = 'single')) +
-  theme_bw()
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  ggtitle("Observations by Taxonomy Class") +
+  labs(x="observations")
 ```
 
 Fourteen taxa classes are observed at NHM. Birds (Aves) are the most observed class by a big margin (11,212 observations). Insects (Insecta) are the second most observed class (2,479 observations).
@@ -159,12 +168,14 @@ Fourteen taxa classes are observed at NHM. Birds (Aves) are the most observed cl
 ```{r}
 ggplot(data=gbif_nhm_df, mapping=aes(y=class)) +
   geom_bar( fill=nhm_color) +
-  theme_bw()
+  theme_bw() +
+  ggtitle("Observations by Taxonomy Class at NHMLAC") +
+  labs(x="observations")
 ```
 
 ```{r}
 gbif_nhm_df |>
-  count(class)
+  count(class, name="observations")
 ```
 
 Nine taxa classes are observed at the Rose Garden. Birds and insects are also the most commonly observed classes, though there is only a small difference between the number of bird and insect observations (137 bird observationss, 125 insect observations).
@@ -173,12 +184,14 @@ Nine taxa classes are observed at the Rose Garden. Birds and insects are also th
 
 ggplot(data=gbif_rose_df, mapping=aes(y=class)) +
   geom_bar(fill=rose_color) +
-  theme_bw()
+  theme_bw() +
+  ggtitle("Observations by Taxonomy Class at Rose Garden") +
+  labs(x="observations")
 ```
 
 ```{r}
 gbif_rose_df |>
-  count(class)
+  count(class, name="observations")
 ```
 
 ## Unique species
@@ -206,7 +219,7 @@ Number of species by taxa class at NHM. Even though though there far more bird o
 gbif_nhm_df |>
   select(verbatimScientificName, class) |>
   unique() |>
-  count(class)
+  count(class, name="observations")
 ```
 
 Number of species by taxa class at Rose Garden. Rose garden has 37 bird species and 36 insect species.
@@ -215,42 +228,51 @@ Number of species by taxa class at Rose Garden. Rose garden has 37 bird species 
 gbif_rose_df |>
   select(verbatimScientificName, class) |>
   unique() |>
-  count(class)
+  count(class, name="observations")
 ```
 
 ## iNaturalist vs eBird
 
-Comparison of the number of iNaturalist and eBird observations. NHM has more eBird observations than iNaturalist observations. Rose Garden has more iNaturalist observations than eBird observations. It is surprising to see so few eBird observations at the Rose Garden. It is as if birders are purposefully avoiding the Rose Garden.
+Comparison of the number of iNaturalist and eBird (CLO) observations. NHM has more eBird observations than iNaturalist observations. Rose Garden has more iNaturalist observations than eBird observations. It is surprising to see so few eBird observations at the Rose Garden. It is as if birders are purposefully avoiding the Rose Garden.
 
 ```{r}
 ggplot(data=gbif_df,
        mapping=aes(x=place, fill=institutionCode)) +
   geom_bar( position = position_dodge(preserve = 'single')) +
-  theme_bw()
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  labs(y="observations", x=element_blank()) +
+  ggtitle("eBird and iNaturalist observations") 
+
 ```
 
 eBird and iNaturalist observations at NHM.
 
 ```{r}
 gbif_nhm_platform_df <- gbif_nhm_df |>
-  count(year, institutionCode)
+  count(year, institutionCode, name="observations")
 
 ggplot(data=gbif_nhm_platform_df,
-       mapping=aes(x=year, y=n, color=institutionCode)) +
-  geom_line(  ) +
-  theme_bw()
+       mapping=aes(x=year, y=observations, color=institutionCode)) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  ggtitle("eBird and iNaturalist observations at NHMLAC") 
+
 ```
 
 eBird and iNaturalist observations at Rose Garden.
 
 ```{r}
 gbif_rose_platform_df <- gbif_rose_df |>
-  count(year, institutionCode)
+  count(year, institutionCode, name="observations")
 
 ggplot(data=gbif_rose_platform_df,
-       mapping=aes(x=year, y=n, color=institutionCode)) +
-  geom_line(  ) +
-  theme_bw()
+       mapping=aes(x=year, y=observations, color=institutionCode)) +
+  geom_line() +
+  theme_bw() +
+  theme(legend.title = element_blank()) +
+  ggtitle("eBird and iNaturalist observations at Rose Garden")
 ```
 
 ## Most observed species
@@ -265,18 +287,19 @@ Top ten most observed species at NHM. All top ten species are birds since eBird 
 
 ```{r}
 gbif_nhm_df |>
-  count(class, verbatimScientificName) |>
-  arrange(desc(n)) |>
+  count(class, verbatimScientificName,name="observations") |>
+  arrange(desc(observations)) |>
   slice(1:10) |>
-  left_join(common_names, by=c('verbatimScientificName'='name'))
+  left_join(common_names,
+            by=c('verbatimScientificName'='name')) 
 ```
 
 Top ten most observed species at Rose Garden. Wider variety of top ten species than NHM since iNaturalist has more observations than eBird.
 
 ```{r}
 gbif_rose_df |>
-  count(class, verbatimScientificName) |>
-  arrange(desc(n)) |>
+  count(class, verbatimScientificName, name="observations") |>
+  arrange(desc(observations)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```
@@ -286,8 +309,8 @@ Top ten most observed species at NHM for iNaturalist.
 ```{r}
 gbif_nhm_df |>
   filter(institutionCode=='iNaturalist') |>
-  count(class, verbatimScientificName) |>
-  arrange(desc(n)) |>
+  count(class, verbatimScientificName, name="observations") |>
+  arrange(desc(observations)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```
@@ -297,8 +320,8 @@ Top ten most observed species at Rose Garden for iNaturalist.
 ```{r}
 gbif_rose_df |>
   filter(institutionCode=='iNaturalist') |>
-  count(class, verbatimScientificName) |>
-  arrange(desc(n)) |>
+  count(class, verbatimScientificName, name="observations") |>
+  arrange(desc(observations)) |>
   slice(1:10) |>
   left_join(common_names, by=c('verbatimScientificName'='name'))
 ```

@@ -1,5 +1,8 @@
 ---
-format: html
+format:
+  html:
+    df-print: kable
+    css: styles.css
 ---
 
 ```{r}
