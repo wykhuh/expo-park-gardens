@@ -1,8 +1,0 @@
-project:
-  title: "gardens"
-  render:
-    - scripts/clean-gbif.qmd
-    - scripts/garden-comparison.qmd
-  output-dir: _site
-
-
