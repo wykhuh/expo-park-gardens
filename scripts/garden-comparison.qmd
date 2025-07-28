@@ -328,7 +328,7 @@ gbif_rose_df |>
 
 ## Thoughts
 
-I assumed there would be more observations at the NHM than Rose Garden because the museum has an active community science program and education department. But I did not expect the difference to be 14K to 400.
+I assumed there would be more observations at the NHM than Rose Garden because the museum has an active community science program and education department. But I did not expect the difference to be 14K to 400.  In theory, community science is supposed to lower the barrier of entry into science. But looking at the Exposition Park gardens data, and the iNaturalist data at LA County colleges and universities, it is a reminder that barriers to science still exist within community science.
 
 I'm a community scientists who likes to dabble with iNaturalist data. I wonder how scientists who study this stuff for a living normalizes eBird and iNaturalist data.
 
